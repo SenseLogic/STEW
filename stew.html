@@ -55,22 +55,24 @@
         <div class="column">
             <div class="row">
                 <label class="label">Key :</label>
-                <input class="grow" id="key" type="password" value="the-key" onfocus="this.type = 'text'" onblur="this.type = 'password'"/>
+                <input class="grow" id="key" type="password" value="" onfocus="this.type = 'text'" onblur="this.type = 'password'"/>
             </div>
             <div class="row">
                 <button onclick="WrapSelectedText()">Wrap</button>
                 <button onclick="MixText()">Mix</button>
                 <button onclick="UnmixText()">Unmix</button>
                 <button onclick="CleanText()">Clean</button>
+                <button onclick="CopyText()">Copy</button>
             </div>
             <div class="row">
-                <textarea class="text grow" id="text" rows="10" cols="50">🔓 text 🔓   🔓 text 🔓</textarea>
+                <textarea class="text grow" id="text" rows="10" cols="50"></textarea>
             </div>
             <div class="row">
                 <button onclick="WrapSelectedText()">Wrap</button>
                 <button onclick="MixText()">Mix</button>
                 <button onclick="UnmixText()">Unmix</button>
                 <button onclick="CleanText()">Clean</button>
+                <button onclick="CopyText()">Copy</button>
             </div>
         </div>
         <script>
@@ -128,9 +130,7 @@
                 state_3 ^= state_1;
                 state_1 ^= state_2;
                 state_0 ^= state_3;
-
                 state_2 ^= shifted_state_1;
-
                 state_3 = GetRotatedInteger( state_3, 11 );
 
                 StateArray[ 0 ] = state_0;
@@ -166,15 +166,15 @@
                 )
             {
                 var
-                    text_encoder,
-                    data,
-                    hash_buffer,
+                    encoded_text,
                     hash_array,
-                    state_index;
+                    hash_buffer,
+                    state_index,
+                    text_encoder;
 
                 text_encoder = new TextEncoder();
-                data = text_encoder.encode( key );
-                hash_buffer = await crypto.subtle.digest( 'SHA-256', data );
+                encoded_text = text_encoder.encode( key );
+                hash_buffer = await crypto.subtle.digest( 'SHA-256', encoded_text );
                 hash_array = new Uint8Array( hash_buffer );
 
                 InitialStateArray = new Uint32Array( 4 );
@@ -309,28 +309,28 @@
 
             // ~~
 
-            function GetCharacterIndexArray(
-                character_count,
+            function GetScrambledElementIndexArray(
+                element_count,
                 swap_count
                 )
             {
                 var
-                    character_index,
-                    character_index_array,
+                    element_index,
+                    element_index_array,
                     index;
 
-                character_index_array = [];
+                element_index_array = [];
 
-                for ( character_index = 0;
-                      character_index < character_count;
-                      ++character_index )
+                for ( element_index = 0;
+                      element_index < element_count;
+                      ++element_index )
                 {
-                    character_index_array.push( character_index );
+                    element_index_array.push( element_index );
                 }
 
-                ScrambleElements( character_index_array, swap_count );
+                ScrambleElements( element_index_array, swap_count );
 
-                return character_index_array;
+                return element_index_array;
             }
 
             // ~~
@@ -362,8 +362,8 @@
                 ScrambleElements( SecondCharacterArray, swap_count );
 
                 swap_count = text.length * 3 + ( GetNextRandomInteger() & 255 );
-                FirstCharacterIndexArray = GetCharacterIndexArray( text.length, swap_count );
-                SecondCharacterIndexArray = GetCharacterIndexArray( text.length, swap_count );
+                FirstCharacterIndexArray = GetScrambledElementIndexArray( text.length, swap_count );
+                SecondCharacterIndexArray = GetScrambledElementIndexArray( text.length, swap_count );
             }
 
             // ~~
@@ -377,7 +377,7 @@
 
                 return (
                     text.replace(
-                        /🔓 ([^🔓\n]*?) 🔓/g,
+                        /🔓 ([^🔓]*?) 🔓/g,
                         ( match, unmixed_text ) =>
                         {
                             var
@@ -406,7 +406,7 @@
 
                 return (
                     text.replace(
-                        /🔒 ([^🔒\n]*?) 🔒/g,
+                        /🔒 ([^🔒]*?) 🔒/g,
                         ( match, mixed_text ) =>
                         {
                             var
@@ -432,7 +432,7 @@
             {
                 return (
                     text.replace(
-                        /🔓 ([^🔓\n]*?) 🔓/g,
+                        /🔓 ([^🔓]*?) 🔓/g,
                         ( match, unmixed_text ) =>
                         {
                             return unmixed_text;
@@ -490,7 +490,6 @@
                     TextElement.selectionEnd = post_character_index + 4;
 
                     AdjustTextHeight();
-                    CopyText();
                 }
             }
 
